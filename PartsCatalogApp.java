@@ -1,5 +1,3 @@
-// Enhanced B+ Tree Java Code with Internal Node Splitting and Promotion
-
 import java.io.*;
 import java.util.*;
 
@@ -32,7 +30,7 @@ class BPlusTreeNode {
 
 class BPlusTree {
     private BPlusTreeNode root;
-    private final int MAX_KEYS = 3;
+    private final int MAX_KEYS = 4;
 
     public BPlusTree() {
         root = new BPlusTreeNode(true);
@@ -88,12 +86,12 @@ class BPlusTree {
             full.keys = new ArrayList<>(full.keys.subList(0, mid + 1));
             parent.keys.add(index, sibling.keys.get(0));
         } else {
-            String promotedKey = full.keys.get(mid); // Save key before truncating list
+            String promotedKey = full.keys.get(mid);
             sibling.children.addAll(full.children.subList(mid + 1, full.children.size()));
             full.children = new ArrayList<>(full.children.subList(0, mid + 1));
             full.keys = leftKeys;
 
-            parent.keys.add(index, promotedKey); // Safe access
+            parent.keys.add(index, promotedKey);
         }
 
         parent.children.add(index + 1, sibling);
@@ -121,6 +119,19 @@ class BPlusTree {
         if (idx >= 0) {
             node.keys.remove(idx);
             node.records.remove(idx);
+        }
+    }
+
+    public void update(String key, String newDescription) {
+        BPlusTreeNode node = root;
+        while (!node.isLeaf) {
+            int i = Collections.binarySearch(node.keys, key);
+            i = i >= 0 ? i + 1 : -i - 1;
+            node = node.children.get(i);
+        }
+        int idx = node.keys.indexOf(key);
+        if (idx >= 0) {
+            node.records.set(idx, new Part(key, newDescription));
         }
     }
 
@@ -205,8 +216,7 @@ class PartsCatalog {
                     String modId = scanner.nextLine();
                     System.out.print("New description: ");
                     String modDesc = scanner.nextLine();
-                    tree.delete(modId);
-                    tree.insert(modId, new Part(modId, modDesc));
+                    tree.update(modId, modDesc);
                 }
                 case 5 -> tree.display();
                 case 6 -> {
@@ -222,7 +232,7 @@ class PartsCatalog {
     private void saveParts() {
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(filename))) {
             for (Part part : tree.getAllParts()) {
-                bw.write(String.format("%-7s %-65s", part.id, part.description));
+                bw.write(String.format("%-7s%8s%-65s", part.id, "", part.description));
                 bw.newLine();
             }
         } catch (IOException e) {
@@ -233,7 +243,7 @@ class PartsCatalog {
 
 public class PartsCatalogApp {
     public static void main(String[] args) {
-        PartsCatalog catalog = new PartsCatalog("partfile.txt"); // partfile.txt must exist in the project directory
+        PartsCatalog catalog = new PartsCatalog("partfile.txt");
         catalog.run();
     }
 }

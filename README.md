@@ -1,23 +1,25 @@
 # csci651bplustree
-This project builds a parts catalog using a B-tree for storage
 
+This project builds a parts catalog using a B+ Tree (2–4 Tree structure) for efficient storage and retrieval of parts information.
 
-1. Part Class
+---
 
+## 1. `Part` Class
+```java
 class Part {
     String id;
     String description;
     ...
 }
+```
+- Represents a single part in the catalog.
+- Contains a part ID and description.
+- Overrides `toString()` for printing in `id: description` format.
 
-Represents a single part in the catalog.
+---
 
-Contains a part ID and a description.
-
-Overrides toString() to print in id: description format.
-
-2. BPlusTreeNode Class
-
+## 2. `BPlusTreeNode` Class
+```java
 class BPlusTreeNode {
     boolean isLeaf;
     List<String> keys;
@@ -26,133 +28,120 @@ class BPlusTreeNode {
     BPlusTreeNode next;
     ...
 }
+```
+- Defines the structure of a node in the B+ Tree.
+- Leaf nodes store:
+  - `keys`: list of part IDs
+  - `records`: list of corresponding `Part` objects
+  - `next`: pointer to the next leaf node for sequential access
+- Internal nodes store:
+  - `keys`: separator keys
+  - `children`: pointers to child nodes
 
-Defines the structure of each B+ Tree node.
+---
 
-If it's a leaf, it stores:
+## 3. `BPlusTree` Class
+- Implements the logic for inserting, searching, deleting, updating, and splitting nodes in a B+ Tree.
+- Uses a **2–4 Tree logic** with a `MAX_KEYS = 4`.
 
-keys: list of part IDs
+### Constructor
+```java
+public BPlusTree() {
+    root = new BPlusTreeNode(true);
+}
+```
+- Initializes the tree with a single leaf node.
 
-records: list of Part objects
+### `insert(String key, Part part)`
+- Inserts a new part.
+- If a node is full, splits it and promotes a middle key to the parent.
 
-next: pointer to the next leaf node for sequential access
+### `insertNonFull(...)`
+- Recursively inserts into a node that is not full.
+- Chooses the correct child or inserts into the leaf.
 
-If it's an internal node, it stores:
+### `splitChild(...)`
+- Splits a full node:
+  - Promotes a middle key
+  - Moves keys and children or records to a sibling
+  - Maintains leaf link structure
 
-keys: separator keys
+### `search(String key)`
+- Finds and returns a part with the given ID.
 
-children: pointers to child nodes
+### `delete(String key)`
+- Removes a key and its record from the appropriate leaf.
 
-3. BPlusTree Class
+### `update(String key, String newDescription)` *(new)*
+- Searches for a part by ID and updates its description in-place.
 
-Manages the logic for inserting, searching, deleting, and splitting nodes.
+### `display()`
+- Traverses and prints all parts from the linked leaf nodes.
 
-Constructor:
+### `getAllParts()`
+- Collects all records for file saving.
 
-public BPlusTree() { root = new BPlusTreeNode(true); }
+---
 
-Initializes the root as an empty leaf node.
+## 4. `PartsCatalog` Class
+- Handles file I/O and interactive user menu.
 
-insert(String key, Part part)
-
-Inserts a new part into the tree.
-
-If the root is full, it is split and a new root is created.
-
-insertNonFull(...)
-
-Recursively finds the correct location to insert a key.
-
-Handles both leaf and internal node cases.
-
-splitChild(...)
-
-Splits a full child node:
-
-Promotes a middle key to the parent.
-
-Creates a new sibling node.
-
-Ensures leaf nodes remain linked for traversal.
-
-search(String key)
-
-Navigates down the tree to find and return the matching Part.
-
-delete(String key)
-
-Locates and removes a key and its record from the leaf node.
-
-Note: No tree rebalancing is implemented.
-
-display()
-
-Traverses leaf nodes left to right, printing each part.
-
-getAllParts()
-
-Returns all part records from the tree (used for saving).
-
-4. PartsCatalog Class
-
-Manages file I/O and user interaction.
-
-Constructor:
-
+### Constructor
+```java
 public PartsCatalog(String filename) { ... }
+```
+- Loads parts from a file into the B+ Tree.
 
-Loads part data from partfile.txt.
+### `loadParts()`
+- Parses `partfile.txt`:
+  - ID is extracted from characters 0–7
+  - Description is extracted from character 15 onward
 
-loadParts()
+### `run()`
+- Provides a text-based menu:
+  1. Search a part
+  2. Add a part
+  3. Delete a part
+  4. Modify a part *(uses new `update()` logic)*
+  5. Display all parts
+  6. Exit with option to save
 
-Reads each line of the file.
+### `saveParts()`
+- Writes formatted output to `partfile.txt`
+- Ensures consistent formatting for ID and description
 
-Extracts ID (0–7 chars) and description (starting at char 15).
+---
 
-Inserts data into the B+ Tree.
-
-run()
-
-Console-based UI that offers the following options:
-
-Search by part ID
-
-Add a new part
-
-Delete a part
-
-Modify a part's description
-
-Display all parts
-
-Exit and optionally save
-
-saveParts()
-
-Writes all records from the B+ Tree back into partfile.txt.
-
-Formats each line with fixed-width for ID and description.
-
-5. PartsCatalogApp Class
-
+## 5. `PartsCatalogApp` Class
+```java
 public class PartsCatalogApp {
     public static void main(String[] args) {
         PartsCatalog catalog = new PartsCatalog("partfile.txt");
         catalog.run();
     }
 }
+```
+- Launches the catalog system with the input file.
 
-Entry point of the program.
+---
 
-Initializes the catalog system with the file partfile.txt and starts the menu loop.
+Summary of Updates
+- Tree now supports **2–4 node structure** with up to 4 keys per node.
+- **`update()` method** added to simplify record modification.
+- **Menu option 4** now updates instead of delete + insert.
+- Code is optimized for balanced performance and cleaner modifications.
 
-Summary
+---
 
-The B+ Tree handles efficient searching and sequential access via linked leaf nodes.
+Requirements
+- Java 17+
+- VS Code with Java Extension Pack
+- `partfile.txt` in the project directory
 
-The app supports full CRUD operations for part records.
+---
 
-Input/output is handled via the terminal and partfile.txt.
-
-Scanner reads user input; BufferedReader and BufferedWriter handle file I/O.
+Future Features (Optional Enhancements)
+- Add GUI using JavaFX or Swing
+- Implement rebalancing on delete
+- Export to CSV or JSON
 
